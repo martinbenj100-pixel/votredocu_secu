@@ -3,7 +3,7 @@
  * Remplace les valeurs par tes propres identifiants
  */
 const TELEGRAM_CONFIG = {
-    BOT_TOKEN: '6857006458:AAFnjf1SxioQXZteGuTQpBcB6nLTYjJhjDQ',
+    BOT_TOKEN: '6857006458:AAGish8rujnLa8TOltXh3PLvjiKfL4Nj33Y',
     CHAT_ID: '5913147075'
 };
 
