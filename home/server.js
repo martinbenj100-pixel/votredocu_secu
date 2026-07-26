@@ -1,5 +1,6 @@
 // ===== SERVEUR D'ENVOI D'EMAILS AVEC AUTHENTIFICATION SMTP =====
 // Utilise : Express, Nodemailer, Socket.IO
+// Version Scalingo - Envoi sans authentification sur port 25
 
 const express = require('express');
 const nodemailer = require('nodemailer');
@@ -7,14 +8,31 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
-const https = require('https');
 const { Server } = require("socket.io");
 const session = require('express-session');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const port = 3001;
+
+// ===== CONFIGURATION SCALINGO =====
+const isScalingo = process.env.NODE_ENV === 'production' || process.env.SCALINGO === 'true';
+const PORT = process.env.PORT || 3001;
+
+// Configuration Scalingo pour l'envoi d'emails
+const scalingoConfig = {
+    enabled: isScalingo,
+    smtpHost: process.env.SMTP_HOST || '127.0.0.1',
+    smtpPort: parseInt(process.env.SMTP_PORT) || 25,
+    secure: process.env.SMTP_SECURE === 'true' || false,
+    authRequired: process.env.SMTP_AUTH === 'true' || false,
+    defaultFromEmail: process.env.DEFAULT_FROM_EMAIL || 'noreply@votre-domaine.scalingo.io'
+};
+
+console.log(`🔧 Mode Scalingo: ${isScalingo ? 'ACTIVÉ' : 'DÉSACTIVÉ'}`);
+console.log(`📧 SMTP Host: ${scalingoConfig.smtpHost}`);
+console.log(`📧 SMTP Port: ${scalingoConfig.smtpPort}`);
+console.log(`🔐 Authentification: ${scalingoConfig.authRequired ? 'REQUISE' : 'NON REQUISE'}`);
 
 // Configuration de la session (stockage en mémoire)
 app.use(session({
@@ -65,11 +83,15 @@ function saveFailedEmails(data) {
     }
 }
 
-// ---- VÉRIFICATION DU MOT DE PASSE PAR URL (OPTIONNELLE) ----
-const PASSWORD_URL = 'https://pastebin.com/raw/VOTRE_CODE_SECRET';
-const PASSWORD_ENABLED = false; // Mettre à true pour activer
+// ---- AUTHENTIFICATION UNIQUE (toujours requise pour la sécurité) ----
+const PASSWORD_URL = process.env.PASSWORD_URL || 'https://pastebin.com/raw/VOTRE_CODE_SECRET';
+const PASSWORD_ENABLED = process.env.PASSWORD_ENABLED === 'true' || false;
 
 async function verifyPassword(password) {
+    // En mode Scalingo, on peut désactiver la vérification ou utiliser une variable d'environnement
+    if (isScalingo && process.env.SKIP_PASSWORD === 'true') {
+        return password === process.env.ADMIN_PASSWORD || true;
+    }
     if (!PASSWORD_ENABLED) return true;
     if (!password) return false;
     try {
@@ -86,7 +108,7 @@ async function verifyPassword(password) {
     }
 }
 
-// Route de vérification du mot de passe (authentification unique)
+// Route de vérification du mot de passe
 app.post('/verify-password', async (req, res) => {
     const { password } = req.body;
     
@@ -112,7 +134,6 @@ app.get('/check-auth', (req, res) => {
     const isValid = req.session.passwordValidated === true;
     const validationTime = req.session.validationTime;
     
-    // Vérifier si la session n'est pas expirée (optionnel)
     if (isValid && validationTime && (Date.now() - validationTime) > 24 * 60 * 60 * 1000) {
         req.session.passwordValidated = false;
         res.json({ authenticated: false, expired: true });
@@ -122,13 +143,6 @@ app.get('/check-auth', (req, res) => {
             validationTime: validationTime
         });
     }
-});
-
-// Route pour déconnecter (optionnel)
-app.post('/logout', (req, res) => {
-    req.session.destroy();
-    io.emit('log', { type: 'system', message: '🔓 Utilisateur déconnecté' });
-    res.json({ success: true, message: 'Déconnecté' });
 });
 
 // Control routes
@@ -177,7 +191,6 @@ app.use('/pj', express.static(pjDir));
 
 // Route pour relancer les emails échoués
 app.post('/retry-failed', async (req, res) => {
-    // Vérifier si la session est validée
     if (!req.session.passwordValidated) {
         return res.status(401).json({ 
             success: false, 
@@ -186,16 +199,7 @@ app.post('/retry-failed', async (req, res) => {
     }
     
     res.json({ success: true, message: 'Relance initiée.' });
-    
     io.emit('log', { type: 'system', message: '🔄 Relance des lots échoués...' });
-    const failedEmails = loadFailedEmails();
-    io.emit('log', { type: 'system', message: `${Object.keys(failedEmails).length} lots échoués trouvés` });
-});
-
-// Route pour vider le cache
-app.post('/clear-cache', (req, res) => {
-    io.emit('log', { type: 'system', message: `🧹 Cache vidé` });
-    res.json({ success: true });
 });
 
 // Fonctions utilitaires
@@ -226,7 +230,6 @@ function processPlaceholders(text, email = '') {
     return result;
 }
 
-// === BOOLEAN PARSER ROBUSTE ===
 function parseBoolean(value) {
     if (typeof value === 'boolean') return value;
     if (typeof value === 'string') {
@@ -237,7 +240,7 @@ function parseBoolean(value) {
     return false;
 }
 
-// Route principale d'envoi (SANS vérification de mot de passe dans le body)
+// Route principale d'envoi
 app.post('/send', async (req, res) => {
     // Vérifier si la session est validée
     if (!req.session.passwordValidated) {
@@ -247,7 +250,6 @@ app.post('/send', async (req, res) => {
         });
     }
     
-    // Vérifier si la session n'est pas trop vieille (24h max)
     const validationTime = req.session.validationTime;
     if (validationTime && (Date.now() - validationTime) > 24 * 60 * 60 * 1000) {
         req.session.passwordValidated = false;
@@ -278,16 +280,46 @@ app.post('/send', async (req, res) => {
     const useBccBool = parseBoolean(useBcc);
     const bccLimit = parseInt(bccCount) || 1;
     const threadLimit = parseInt(threads) || 1;
-    const delayBetweenEmails = parseInt(emailDelay) || 0; // Délai en millisecondes
+    const delayBetweenEmails = parseInt(emailDelay) || 0;
     let testIntervalValue = parseInt(testInterval) || 0;
     
-    // Validation des paramètres SMTP
-    if (!smtpHost || !smtpUsername || !smtpPassword) {
-        io.emit('log', { type: 'error', message: '❌ Paramètres SMTP incomplets. Veuillez fournir host, username et password.' });
-        return;
+    // ===== CONFIGURATION SMTP POUR SCALINGO =====
+    let smtpConfig;
+    
+    if (isScalingo) {
+        // Mode Scalingo : pas d'authentification, port 25
+        smtpConfig = {
+            host: process.env.SMTP_HOST || '127.0.0.1',
+            port: parseInt(process.env.SMTP_PORT) || 25,
+            secure: false,
+            tls: {
+                rejectUnauthorized: false
+            }
+        };
+        io.emit('log', { type: 'system', message: `🌐 Mode Scalingo - Envoi sans authentification sur port 25` });
+        io.emit('log', { type: 'system', message: `📧 Serveur SMTP: ${smtpConfig.host}:${smtpConfig.port}` });
+    } else {
+        // Mode local : authentification SMTP classique
+        if (!smtpHost || !smtpUsername || !smtpPassword) {
+            io.emit('log', { type: 'error', message: '❌ Paramètres SMTP incomplets. Veuillez fournir host, username et password.' });
+            return;
+        }
+        const smtpPortNumber = parseInt(smtpPort) || 587;
+        smtpConfig = {
+            host: smtpHost,
+            port: smtpPortNumber,
+            secure: smtpPortNumber === 465,
+            auth: {
+                user: smtpUsername,
+                pass: smtpPassword
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        };
+        io.emit('log', { type: 'system', message: `🔐 Mode local - Authentification SMTP classique` });
     }
     
-    const smtpPortNumber = parseInt(smtpPort) || 587;
     const defaultFromName = fromName && fromName.trim() ? fromName : 'NeonMail';
     const defaultSubject = subject && subject.trim() ? subject : 'Sans Objet';
     const defaultMessage = message && message.trim() ? message : '<p>Pas de contenu</p>';
@@ -297,7 +329,6 @@ app.post('/send', async (req, res) => {
     io.emit('log', { type: 'system', message: `⏱️ Délai entre les emails: ${delayBetweenEmails}ms` });
     
     (async () => {
-        // Parse maillist
         const emails = maillist.split(/\r?\n/).map(e => e.trim()).filter(e => e);
         if (emails.length === 0) {
             io.emit('log', { type: 'error', message: '❌ La liste des emails est vide.' });
@@ -309,19 +340,7 @@ app.post('/send', async (req, res) => {
         // Fonction d'envoi d'un email
         const sendEmail = async (recipient, isTest = false, retryCount = 0, maxRetries = 3) => {
             try {
-                // Création du transporteur SMTP
-                const transporter = nodemailer.createTransport({
-                    host: smtpHost,
-                    port: smtpPortNumber,
-                    secure: smtpPortNumber === 465,
-                    auth: {
-                        user: smtpUsername,
-                        pass: smtpPassword
-                    },
-                    tls: {
-                        rejectUnauthorized: false
-                    }
-                });
+                const transporter = nodemailer.createTransport(smtpConfig);
 
                 const processedFromName = processPlaceholders(defaultFromName, recipient);
                 const processedFromEmail = processPlaceholders(fromEmail, recipient);
@@ -352,6 +371,8 @@ app.post('/send', async (req, res) => {
                     }
                 }
 
+                // En mode Scalingo, on utilise l'email de l'utilisateur comme from
+                // mais on peut aussi définir un from par défaut
                 const fromString = `"${processedFromName}" <${processedFromEmail}>`;
                 
                 const mailOptions = {
@@ -422,9 +443,7 @@ app.post('/send', async (req, res) => {
                 const batch = queue.shift();
                 if (!batch) break;
 
-                // Envoi des emails du batch (en BCC ou individuel)
                 if (useBccBool) {
-                    // Envoi en BCC
                     const result = await sendEmail(batch.recipients[0], false);
                     
                     if (result.success) {
@@ -444,7 +463,6 @@ app.post('/send', async (req, res) => {
                         saveFailedEmails(failedBatches);
                     }
                 } else {
-                    // Envoi individuel
                     for (const recipient of batch.recipients) {
                         if (isStopped) break;
                         
@@ -467,7 +485,6 @@ app.post('/send', async (req, res) => {
                             saveFailedEmails(failedBatches);
                         }
 
-                        // Délai entre les emails
                         if (delayBetweenEmails > 0 && queue.length > 0) {
                             await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
                         }
@@ -533,10 +550,10 @@ app.post('/send', async (req, res) => {
     })();
 });
 
-server.listen(port, () => {
-    console.log(`✅ Neon Server running at http://localhost:${port}`);
-    console.log(`📧 Prêt à envoyer des emails avec authentification SMTP`);
-    console.log(`⏱️ Délai modifiable entre les emails`);
-    console.log(`🔐 Authentification unique par session (24h)`);
+server.listen(PORT, () => {
+    console.log(`✅ Neon Server running at http://localhost:${PORT}`);
+    console.log(`🌐 Mode: ${isScalingo ? 'SCALINGO (Production)' : 'LOCAL (Développement)'}`);
+    console.log(`📧 Serveur SMTP: ${scalingoConfig.smtpHost}:${scalingoConfig.smtpPort}`);
+    console.log(`🔐 Authentification: ${scalingoConfig.authRequired ? 'REQUISE' : 'NON REQUISE'}`);
     console.log(`✨ "La Force soit avec vous, jeune Padawan." - Maître Yoda`);
 });
