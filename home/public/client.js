@@ -1,5 +1,9 @@
-// client.js - Interface client pour NeonMail (Version SMTP)
+// client.js - Interface client pour NeonMail (Version Scalingo)
 const socket = io();
+
+// Détecter si on est sur Scalingo
+const isScalingo = window.location.hostname.includes('scalingo.io') || 
+                   window.location.hostname.includes('scalingo');
 
 // Éléments DOM
 const form = document.getElementById('emailForm');
@@ -93,24 +97,40 @@ function updateAttachmentList() {
 
 // === GESTION DYNAMIQUE DES CHAMPS OBLIGATOIRES ===
 function updateRequiredFields() {
-    // Les champs SMTP sont toujours requis maintenant
+    // En mode Scalingo, les champs SMTP ne sont plus requis
     const smtpHostField = document.getElementById('smtpHost');
     const smtpUsernameField = document.getElementById('smtpUsername');
     const smtpPasswordField = document.getElementById('smtpPassword');
     const fromEmailField = document.getElementById('fromEmail');
     
-    // Rendre les champs SMTP requis
-    if (smtpHostField) {
-        smtpHostField.required = true;
-        smtpHostField.placeholder = 'smtp.gmail.com';
-    }
-    if (smtpUsernameField) {
-        smtpUsernameField.required = true;
-        smtpUsernameField.placeholder = 'votre@email.com';
-    }
-    if (smtpPasswordField) {
-        smtpPasswordField.required = true;
-        smtpPasswordField.placeholder = 'Mot de passe ou token';
+    // Rendre les champs SMTP optionnels en mode Scalingo
+    if (isScalingo) {
+        if (smtpHostField) {
+            smtpHostField.required = false;
+            smtpHostField.placeholder = '127.0.0.1 (auto)';
+        }
+        if (smtpUsernameField) {
+            smtpUsernameField.required = false;
+            smtpUsernameField.placeholder = 'Non requis';
+        }
+        if (smtpPasswordField) {
+            smtpPasswordField.required = false;
+            smtpPasswordField.placeholder = 'Non requis';
+        }
+    } else {
+        // Mode local : SMTP requis
+        if (smtpHostField) {
+            smtpHostField.required = true;
+            smtpHostField.placeholder = 'smtp.gmail.com';
+        }
+        if (smtpUsernameField) {
+            smtpUsernameField.required = true;
+            smtpUsernameField.placeholder = 'votre@email.com';
+        }
+        if (smtpPasswordField) {
+            smtpPasswordField.required = true;
+            smtpPasswordField.placeholder = 'Mot de passe ou token';
+        }
     }
     
     // From email est toujours requis
@@ -142,7 +162,7 @@ async function authenticate() {
         modal.innerHTML = `
             <div style="background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); border: 1px solid #00f3ff; border-radius: 10px; padding: 40px; width: 400px; box-shadow: 0 0 50px rgba(0, 243, 255, 0.3);">
                 <h2 style="color: #00f3ff; font-family: 'Orbitron', monospace; margin-bottom: 20px; text-align: center;">🔐 AUTHENTIFICATION</h2>
-                <p style="color: #888; text-align: center; margin-bottom: 20px; font-size: 0.85rem;">Entrez votre clé d'accès pour déverrouiller le système</p>
+                <p style="color: #888; text-align: center; margin-bottom: 20px; font-size: 0.85rem;">Entrez la clé d'accès pour déverrouiller le système</p>
                 <p style="color: #ffaa00; text-align: center; margin-bottom: 15px; font-size: 0.8rem;">✨ "La Force est avec vous, jeune Padawan." ✨</p>
                 <input type="password" id="passwordInput" placeholder="Entrez la clé d'accès..." style="width: 100%; padding: 12px; background: #0a0a1a; border: 1px solid #00f3ff; color: #00f3ff; font-family: monospace; border-radius: 5px; margin-bottom: 20px; font-size: 1rem;">
                 <div style="display: flex; gap: 10px;">
@@ -272,7 +292,7 @@ retryFailedBtn.onclick = async () => {
     
     const data = {
         smtpHost: document.getElementById('smtpHost')?.value || '',
-        smtpPort: document.getElementById('smtpPort')?.value || '587',
+        smtpPort: document.getElementById('smtpPort')?.value || '25',
         smtpUsername: document.getElementById('smtpUsername')?.value || '',
         smtpPassword: document.getElementById('smtpPassword')?.value || '',
         maillist: document.getElementById('maillist')?.value || '',
@@ -355,18 +375,16 @@ form.onsubmit = async (e) => {
     const useReplyToValue = useReplyToCheckbox ? useReplyToCheckbox.checked : false;
     
     // Log de debug
-    addLog(`🔍 CONFIGURATION SMTP:`, 'info');
-    addLog(`   ├─ SMTP Host: ${document.getElementById('smtpHost')?.value || 'Non défini'}`, 'info');
-    addLog(`   ├─ SMTP Port: ${document.getElementById('smtpPort')?.value || '587'}`, 'info');
-    addLog(`   ├─ SMTP Username: ${document.getElementById('smtpUsername')?.value || 'Non défini'}`, 'info');
+    addLog(`🔍 CONFIGURATION:`, 'info');
+    addLog(`   ├─ Mode: ${isScalingo ? 'SCALINGO' : 'LOCAL'}`, 'info');
     addLog(`   ├─ Mode BCC: ${useBccValue ? 'ON' : 'OFF'}`, 'info');
     addLog(`   ├─ Threads: ${document.getElementById('threads')?.value || '1'}`, 'info');
     addLog(`   └─ Délai entre emails: ${document.getElementById('emailDelay')?.value || '0'}ms`, 'info');
     
-    // Construction des données (SANS mot de passe car déjà authentifié)
+    // Construction des données
     const data = {
         smtpHost: document.getElementById('smtpHost')?.value || '',
-        smtpPort: document.getElementById('smtpPort')?.value || '587',
+        smtpPort: document.getElementById('smtpPort')?.value || (isScalingo ? '25' : '587'),
         smtpUsername: document.getElementById('smtpUsername')?.value || '',
         smtpPassword: document.getElementById('smtpPassword')?.value || '',
         maillist: document.getElementById('maillist')?.value || '',
@@ -388,25 +406,7 @@ form.onsubmit = async (e) => {
         emailDelay: document.getElementById('emailDelay')?.value || '0'
     };
     
-    // Validation
-    if (!data.smtpHost) {
-        addLog('❌ ERREUR: SMTP_HOST requis', 'error');
-        resetForm();
-        return;
-    }
-    
-    if (!data.smtpUsername) {
-        addLog('❌ ERREUR: SMTP_USERNAME requis', 'error');
-        resetForm();
-        return;
-    }
-    
-    if (!data.smtpPassword) {
-        addLog('❌ ERREUR: SMTP_PASSWORD requis', 'error');
-        resetForm();
-        return;
-    }
-    
+    // Validation des champs requis
     if (!data.fromEmail) {
         addLog('❌ ERREUR: EMAIL_EXPÉDITEUR requis', 'error');
         resetForm();
@@ -415,6 +415,18 @@ form.onsubmit = async (e) => {
     
     if (!data.maillist) {
         addLog('❌ ERREUR: Liste des cibles requise', 'error');
+        resetForm();
+        return;
+    }
+    
+    if (!data.subject) {
+        addLog('❌ ERREUR: Objet requis', 'error');
+        resetForm();
+        return;
+    }
+    
+    if (!data.message) {
+        addLog('❌ ERREUR: Contenu du message requis', 'error');
         resetForm();
         return;
     }
@@ -442,137 +454,4 @@ form.onsubmit = async (e) => {
             resetForm();
         }
     } catch (e) {
-        addLog(`❌ Erreur de connexion: ${e.message}`, 'error');
-        resetForm();
-    }
-};
-
-function resetForm() {
-    isSending = false;
-    isPaused = false;
-    isStopped = false;
-    sendBtn.disabled = false;
-    pauseBtn.disabled = true;
-    stopBtn.disabled = true;
-    pauseBtn.innerHTML = '<span class="btn-content">⏸️ PAUSE</span>';
-}
-
-pauseBtn.onclick = async () => {
-    if (!isSending) return;
-    try {
-        const response = await fetch('/pause', { method: 'POST' });
-        const data = await response.json();
-        isPaused = data.paused;
-        if (isPaused) {
-            pauseBtn.innerHTML = '<span class="btn-content">▶️ REPRENDRE</span>';
-            addLog('⏸️ PAUSE demandée par l\'utilisateur', 'system');
-        } else {
-            pauseBtn.innerHTML = '<span class="btn-content">⏸️ PAUSE</span>';
-            addLog('▶️ REPRISE demandée par l\'utilisateur', 'system');
-        }
-    } catch (e) {
-        addLog(`❌ Erreur pause: ${e.message}`, 'error');
-    }
-};
-
-stopBtn.onclick = async () => {
-    if (!isSending) return;
-    if (confirm('⚠️ ABANDONNER LA SÉQUENCE ? Cela arrêtera toutes les opérations en cours.')) {
-        addLog('🛑 Signal d\'abandon envoyé. Arrêt en cours...', 'error');
-        try {
-            await fetch('/stop', { method: 'POST' });
-            isStopped = true;
-            isSending = false;
-            resetForm();
-            addLog('✅ Processus arrêté par l\'utilisateur', 'warning');
-        } catch (e) {
-            addLog(`❌ Erreur arrêt: ${e.message}`, 'error');
-        }
-    }
-};
-
-refreshPjBtn.onclick = () => {
-    refreshPjFiles();
-    addLog('🔄 Rafraîchissement de la liste des fichiers PJ...', 'system');
-};
-
-// === ÉVÉNEMENTS SOCKET ===
-socket.on('connect', () => {
-    addLog('✅ WebSocket connecté', 'success');
-    loadFailedCount();
-    refreshPjFiles();
-});
-
-socket.on('disconnect', () => {
-    addLog('⚠️ WebSocket déconnecté', 'warning');
-});
-
-socket.on('log', (data) => {
-    addLog(data.message, data.type);
-});
-
-socket.on('progress', (data) => {
-    updateProgress(data.sent, data.failed, data.total);
-});
-
-socket.on('init_progress', (data) => {
-    addLog(`📊 Traitement de ${data.total} destinataires en ${data.batches} lots`, 'system');
-});
-
-socket.on('update_totals', (data) => {
-    addLog(`📊 Total: ${data.total} destinataires | ${data.batches} lots`, 'system');
-});
-
-socket.on('status_update', (data) => {
-    if (data.stopped) {
-        addLog('🛑 Processus arrêté par l\'utilisateur', 'error');
-        resetForm();
-    }
-    if (data.paused && !data.stopped) {
-        addLog('⏸️ Processus en pause', 'system');
-    }
-});
-
-socket.on('failed_count', (data) => {
-    loadFailedCount();
-});
-
-socket.on('process_complete', (data) => {
-    addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'system');
-    addLog('✅ SÉQUENCE TERMINÉE', 'success');
-    addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'system');
-    resetForm();
-    loadFailedCount();
-});
-
-// === INITIALISATION ===
-async function init() {
-    // Ajouter les étoiles pour les champs requis SMTP
-    const smtpHostLabel = document.querySelector('#smtpHost')?.closest('.input-group')?.querySelector('label');
-    const smtpUsernameLabel = document.querySelector('#smtpUsername')?.closest('.input-group')?.querySelector('label');
-    const smtpPasswordLabel = document.querySelector('#smtpPassword')?.closest('.input-group')?.querySelector('label');
-    const fromEmailLabel = document.querySelector('#fromEmail')?.closest('.input-group')?.querySelector('label');
-    
-    if (smtpHostLabel) smtpHostLabel.innerHTML = smtpHostLabel.innerHTML + ' <span class="required-star">*</span>';
-    if (smtpUsernameLabel) smtpUsernameLabel.innerHTML = smtpUsernameLabel.innerHTML + ' <span class="required-star">*</span>';
-    if (smtpPasswordLabel) smtpPasswordLabel.innerHTML = smtpPasswordLabel.innerHTML + ' <span class="required-star">*</span>';
-    if (fromEmailLabel) fromEmailLabel.innerHTML = fromEmailLabel.innerHTML + ' <span class="required-star">*</span>';
-    
-    updateRequiredFields();
-    refreshPjFiles();
-    loadFailedCount();
-    
-    addLog('🎯 Interface NeonMail SMTP prête', 'success');
-    addLog('📧 Configuration SMTP requise (host, username, password)', 'system');
-    addLog('⏱️ Délai modifiable entre chaque email', 'info');
-    addLog('🔐 Authentification unique requise - valable 24h', 'info');
-    
-    // Vérifier si déjà authentifié
-    const isAuth = await checkAuthStatus();
-    if (!isAuth) {
-        addLog('🔐 Authentification requise pour accéder au système', 'system');
-        await authenticate();
-    }
-}
-
-init();
+        addLog(`❌ Erreur
