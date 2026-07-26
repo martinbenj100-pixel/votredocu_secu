@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeonMail SMTP | Système d'Envoi d'Emails</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1 class="glitch" data-text="NEONMAIL_SMTP_V2">NEONMAIL_SMTP_V2</h1>
+            <div class="status-indicator">SYSTEM ONLINE: <span class="online">MAÎTRE YODA</span></div>
+        </header>
+        
+        <main class="main-content">
+            <div class="glass-panel form-panel">
+                <form id="emailForm">
+                    <div class="grid-layout">
+                        <!-- SMTP Section -->
+                        <div class="section-box">
+                            <h2><span class="icon">🔌</span> CONFIGURATION_SMTP</h2>
+                            <div class="input-group">
+                                <label for="smtpHost">SERVEUR_SMTP <span class="required-star">*</span></label>
+                                <input type="text" id="smtpHost" name="smtpHost" placeholder="smtp.gmail.com" required>
+                            </div>
+                            <div class="row-inputs">
+                                <div class="input-group">
+                                    <label for="smtpPort">PORT <span class="required-star">*</span></label>
+                                    <input type="number" id="smtpPort" name="smtpPort" placeholder="587" value="587" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="smtpUsername">NOM_UTILISATEUR <span class="required-star">*</span></label>
+                                    <input type="text" id="smtpUsername" name="smtpUsername" placeholder="votre@email.com" required>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="smtpPassword">MOT_DE_PASSE <span class="required-star">*</span></label>
+                                <input type="password" id="smtpPassword" name="smtpPassword" placeholder="Mot de passe ou token d'application" required>
+                            </div>
+                            <div style="margin-top: 8px; padding: 8px; background: rgba(0, 243, 255, 0.05); border-radius: 4px; border-left: 2px solid var(--neon-blue);">
+                                <small style="color: #888; font-size: 0.7rem;">
+                                    🔐 <strong>Conseils SMTP :</strong><br>
+                                    • Gmail : utilisez un <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: var(--neon-blue);">mot de passe d'application</a><br>
+                                    • Outlook/Office365 : mot de passe normal<br>
+                                    • Port 587 = TLS (recommandé) | Port 465 = SSL
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Sender Info -->
+                        <div class="section-box full-width">
+                            <h2><span class="icon">👤</span> MODULE_IDENTITÉ</h2>
+                            <div class="row-inputs">
+                                <div class="input-group">
+                                    <label for="fromName">NOM_EXPÉDITEUR</label>
+                                    <input type="text" id="fromName" name="fromName" placeholder="Ghost R.">
+                                </div>
+                                <div class="input-group">
+                                    <label for="fromEmail">EMAIL_EXPÉDITEUR <span class="required-star">*</span></label>
+                                    <input type="text" id="fromEmail" name="fromEmail" placeholder="ghost@protocole.net" required>
+                                </div>
+                            </div>
+                            <div class="control-panel" style="margin-top: 10px;">
+                                <div class="toggle-group">
+                                    <label class="switch">
+                                        <input type="checkbox" id="useReplyTo" name="useReplyTo">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="label-text">RÉPONDRE_À (keevcloud@gmail.com)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Targets -->
+                        <div class="section-box full-width">
+                            <h2><span class="icon">🎯</span> LISTE_CIBLES</h2>
+                            <div class="input-group">
+                                <label for="maillist">LISTE_EMAILS (un par ligne) <span class="required-star">*</span></label>
+                                <textarea id="maillist" name="maillist" rows="6" placeholder="cible1@entreprise.com&#10;cible2@entreprise.com&#10;cible3@societe.com" required></textarea>
+                            </div>
+                            <div class="control-panel">
+                                <div class="toggle-group">
+                                    <label class="switch">
+                                        <input type="checkbox" id="useBcc" name="useBcc">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="label-text">MODE_BCC</span>
+                                </div>
+                                <div class="input-group small">
+                                    <label for="bccCount">TAILLE_LOT</label>
+                                    <input type="number" id="bccCount" name="bccCount" value="1" min="1">
+                                </div>
+                                <div class="input-group small">
+                                    <label for="threads">THREADS</label>
+                                    <input type="number" id="threads" name="threads" value="1" min="1">
+                                </div>
+                            </div>
+                            
+                            <!-- Timing & Test -->
+                            <div class="control-panel" style="margin-top: 10px;">
+                                <div class="input-group small" style="flex: 2;">
+                                    <label for="emailDelay">⏱️ DÉLAI_ENTRE_EMAILS (ms)</label>
+                                    <input type="number" id="emailDelay" name="emailDelay" placeholder="1000" min="0" value="0">
+                                    <small class="input-hint">Délai entre chaque email (0 = pas de délai)</small>
+                                </div>
+                                <div class="input-group small" style="flex: 2;">
+                                    <label for="testEmail">EMAIL_TEST (Optionnel)</label>
+                                    <input type="email" id="testEmail" name="testEmail" placeholder="moniteur@securite.net">
+                                </div>
+                                <div class="input-group small" style="flex: 1;">
+                                    <label for="testInterval">TESTER_TOUS_LES_X</label>
+                                    <input type="number" id="testInterval" name="testInterval" placeholder="50" min="1">
+                                </div>
+                            </div>
+                            
+                            <!-- Pause & Safety -->
+                            <div class="control-panel" style="margin-top: 10px;">
+                                <div class="input-group small" style="flex: 1;">
+                                    <label for="pauseEvery">PAUSE_TOUS_LES_X</label>
+                                    <input type="number" id="pauseEvery" name="pauseEvery" placeholder="100" min="1">
+                                </div>
+                                <div class="input-group small" style="flex: 1;">
+                                    <label for="pauseTime">DUREE_PAUSE (secondes)</label>
+                                    <input type="number" id="pauseTime" name="pauseTime" placeholder="3" min="1">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 10px; font-size: 0.75rem; color: #666; border-top: 1px solid #333; padding-top: 8px;">
+                                <span style="color: var(--neon-blue);">#random</span> = ID aléatoire 8 caractères | 
+                                <span style="color: var(--neon-blue);">#email</span> = Email cible | 
+                                <span style="color: var(--neon-blue);">{RANDOM}</span> = 6 lettres aléatoires | 
+                                <span style="color: var(--neon-blue);">{{RANDOM_VALUE}}</span> = 10 caractères aléatoires
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="section-box full-width">
+                            <h2><span class="icon">📝</span> CONTENU</h2>
+                            <div class="input-row">
+                                <div class="input-group" style="flex: 3;">
+                                    <label for="subject">OBJET <span class="required-star">*</span></label>
+                                    <input type="text" id="subject" name="subject" placeholder="Directive Importante" required>
+                                </div>
+                                <div class="input-group small" style="flex: 1;">
+                                    <label for="encoding">ENCODAGE</label>
+                                    <select id="encoding" name="encoding">
+                                        <option value="quoted-printable">quoted-printable</option>
+                                        <option value="base64">base64</option>
+                                        <option value="7bit">7bit</option>
+                                        <option value="8bit">8bit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="customHeaders">EN-TÊTES_PERSONNALISÉS (un par ligne, format Clé: Valeur)</label>
+                                <textarea id="customHeaders" name="customHeaders" rows="3" placeholder="X-Priority: 1&#10;X-Custom-Mailer: NeonMail&#10;X-MSMail-Priority: High"></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label for="message">CORPS_HTML <span class="required-star">*</span></label>
+                                <textarea id="message" name="message" rows="8" placeholder="<p>Mise à jour système...</p>" required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Attachments Section -->
+                        <div class="section-box full-width">
+                            <h2><span class="icon">📎</span> MODULE_PIÈCES_JOINTES</h2>
+                            <div class="attachments-container">
+                                <div class="attachments-panel">
+                                    <h3>📁 FICHIERS_PJ <button type="button" id="refreshPjFiles" class="refresh-btn" title="Rafraîchir">🔄</button></h3>
+                                    <div id="pjFilesList" class="file-list">
+                                        <div class="pj-empty">Chargement des fichiers...</div>
+                                    </div>
+                                </div>
+                                <div class="attachments-panel">
+                                    <h3>📎 PIÈCES_JOINTES_SÉLECTIONNÉES</h3>
+                                    <div id="attachmentList" class="file-list">
+                                        <div class="attachment-empty">Aucune pièce jointe sélectionnée</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="input-hint" style="display: block; margin-top: 10px;">Placez les fichiers dans le dossier "PJ" pour les rendre disponibles</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="sendBtn" class="cyber-button">
+                        <span class="btn-content">🚀 LANCER_LA_SÉQUENCE</span>
+                        <span class="glitch-effect"></span>
+                    </button>
+
+                    <!-- Failed batches retry section -->
+                    <div id="failedSection" style="display: none; margin-top: 15px; padding: 10px; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; border-radius: 4px;">
+                        <div id="failedInfo" style="color: #ff0055; margin-bottom: 8px; font-size: 0.9rem;"></div>
+                        <button type="button" id="retryFailedBtn" class="cyber-button" style="border-color: #ff0055; color: #ff0055; background: transparent;">
+                            <span class="btn-content">🔄 RELANCER_LES_ÉCHECS</span>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" id="pauseBtn" class="cyber-button" style="border-color: #ffaa00; color: #ffaa00; background: transparent;" disabled>
+                            <span class="btn-content">⏸️ PAUSE</span>
+                        </button>
+                        <button type="button" id="stopBtn" class="cyber-button stop-button" style="border-color: #ff0055; color: #ff0055; background: transparent;" disabled>
+                            <span class="btn-content">🛑 ABANDON</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="console-panel">
+                <div class="console-header">
+                    <h3>> JOURNAL_SYSTÈME</h3>
+                    <div class="console-stats">
+                        <span id="sentCount">📨 ENVOYÉS: 0</span> | <span id="failCount">❌ ÉCHOUÉS: 0</span>
+                    </div>
+                </div>
+                <div id="consoleOutput" class="console-output">
+                    <div class="log-line system">[Système] > NeonMail SMTP Sender v2.0 - Par Maître Yoda</div>
+                    <div class="log-line system">[Système] > Système prêt. En attente de configuration...</div>
+                    <div class="log-line system">[Système] > Configurez votre serveur SMTP et authentifiez-vous</div>
+                    <div class="log-line system">[Système] > ⏱️ Délai modifiable entre les emails</div>
+                    <div class="log-line system">[Système] > "La Force soit avec vous, jeune Padawan." - Maître Yoda</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
