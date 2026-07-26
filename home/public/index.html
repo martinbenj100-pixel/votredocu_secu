@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeonMail SMTP | Système d'Envoi d'Emails</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <!-- Le style est maintenant servi par le serveur -->
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="app-container">
@@ -18,34 +19,33 @@
             <div class="glass-panel form-panel">
                 <form id="emailForm">
                     <div class="grid-layout">
-                        <!-- SMTP Section -->
+                        <!-- SMTP Section - En mode Scalingo, ces champs sont optionnels -->
                         <div class="section-box">
                             <h2><span class="icon">🔌</span> CONFIGURATION_SMTP</h2>
+                            <div class="smtp-info-box" style="background: rgba(0, 243, 255, 0.1); border-left: 2px solid var(--neon-blue); padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                                <small style="color: #00f3ff; font-size: 0.75rem;">
+                                    🌐 <strong>MODE SCALINGO</strong><br>
+                                    L'envoi se fait automatiquement via le serveur SMTP de Scalingo.<br>
+                                    <span style="color: #888;">Les champs SMTP ci-dessous sont optionnels.</span>
+                                </small>
+                            </div>
                             <div class="input-group">
-                                <label for="smtpHost">SERVEUR_SMTP <span class="required-star">*</span></label>
-                                <input type="text" id="smtpHost" name="smtpHost" placeholder="smtp.gmail.com" required>
+                                <label for="smtpHost">SERVEUR_SMTP <span style="color: #666; font-size: 0.7rem;">(Optionnel)</span></label>
+                                <input type="text" id="smtpHost" name="smtpHost" placeholder="127.0.0.1 (auto)">
                             </div>
                             <div class="row-inputs">
                                 <div class="input-group">
-                                    <label for="smtpPort">PORT <span class="required-star">*</span></label>
-                                    <input type="number" id="smtpPort" name="smtpPort" placeholder="587" value="587" required>
+                                    <label for="smtpPort">PORT <span style="color: #666; font-size: 0.7rem;">(Optionnel)</span></label>
+                                    <input type="number" id="smtpPort" name="smtpPort" placeholder="25" value="25">
                                 </div>
                                 <div class="input-group">
-                                    <label for="smtpUsername">NOM_UTILISATEUR <span class="required-star">*</span></label>
-                                    <input type="text" id="smtpUsername" name="smtpUsername" placeholder="votre@email.com" required>
+                                    <label for="smtpUsername">NOM_UTILISATEUR <span style="color: #666; font-size: 0.7rem;">(Optionnel)</span></label>
+                                    <input type="text" id="smtpUsername" name="smtpUsername" placeholder="Non requis sur Scalingo">
                                 </div>
                             </div>
                             <div class="input-group">
-                                <label for="smtpPassword">MOT_DE_PASSE <span class="required-star">*</span></label>
-                                <input type="password" id="smtpPassword" name="smtpPassword" placeholder="Mot de passe ou token d'application" required>
-                            </div>
-                            <div style="margin-top: 8px; padding: 8px; background: rgba(0, 243, 255, 0.05); border-radius: 4px; border-left: 2px solid var(--neon-blue);">
-                                <small style="color: #888; font-size: 0.7rem;">
-                                    🔐 <strong>Conseils SMTP :</strong><br>
-                                    • Gmail : utilisez un <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: var(--neon-blue);">mot de passe d'application</a><br>
-                                    • Outlook/Office365 : mot de passe normal<br>
-                                    • Port 587 = TLS (recommandé) | Port 465 = SSL
-                                </small>
+                                <label for="smtpPassword">MOT_DE_PASSE <span style="color: #666; font-size: 0.7rem;">(Optionnel)</span></label>
+                                <input type="password" id="smtpPassword" name="smtpPassword" placeholder="Non requis sur Scalingo">
                             </div>
                         </div>
 
@@ -54,12 +54,12 @@
                             <h2><span class="icon">👤</span> MODULE_IDENTITÉ</h2>
                             <div class="row-inputs">
                                 <div class="input-group">
-                                    <label for="fromName">NOM_EXPÉDITEUR</label>
-                                    <input type="text" id="fromName" name="fromName" placeholder="Ghost R.">
+                                    <label for="fromName">NOM_EXPÉDITEUR <span class="required-star">*</span></label>
+                                    <input type="text" id="fromName" name="fromName" placeholder="Votre Nom" value="NeonMail System">
                                 </div>
                                 <div class="input-group">
                                     <label for="fromEmail">EMAIL_EXPÉDITEUR <span class="required-star">*</span></label>
-                                    <input type="text" id="fromEmail" name="fromEmail" placeholder="ghost@protocole.net" required>
+                                    <input type="text" id="fromEmail" name="fromEmail" placeholder="expediteur@domaine.com" required>
                                 </div>
                             </div>
                             <div class="control-panel" style="margin-top: 10px;">
@@ -102,12 +102,12 @@
                             <div class="control-panel" style="margin-top: 10px;">
                                 <div class="input-group small" style="flex: 2;">
                                     <label for="emailDelay">⏱️ DÉLAI_ENTRE_EMAILS (ms)</label>
-                                    <input type="number" id="emailDelay" name="emailDelay" placeholder="1000" min="0" value="0">
+                                    <input type="number" id="emailDelay" name="emailDelay" placeholder="1000" min="0" value="500">
                                     <small class="input-hint">Délai entre chaque email (0 = pas de délai)</small>
                                 </div>
                                 <div class="input-group small" style="flex: 2;">
                                     <label for="testEmail">EMAIL_TEST (Optionnel)</label>
-                                    <input type="email" id="testEmail" name="testEmail" placeholder="moniteur@securite.net">
+                                    <input type="email" id="testEmail" name="testEmail" placeholder="votre.email@test.com">
                                 </div>
                                 <div class="input-group small" style="flex: 1;">
                                     <label for="testInterval">TESTER_TOUS_LES_X</label>
@@ -218,8 +218,7 @@
                 <div id="consoleOutput" class="console-output">
                     <div class="log-line system">[Système] > NeonMail SMTP Sender v2.0 - Par Maître Yoda</div>
                     <div class="log-line system">[Système] > Système prêt. En attente de configuration...</div>
-                    <div class="log-line system">[Système] > Configurez votre serveur SMTP et authentifiez-vous</div>
-                    <div class="log-line system">[Système] > ⏱️ Délai modifiable entre les emails</div>
+                    <div class="log-line system">[Système] > 🌐 Mode Scalingo activé - Envoi automatique</div>
                     <div class="log-line system">[Système] > "La Force soit avec vous, jeune Padawan." - Maître Yoda</div>
                 </div>
                 <div class="progress-bar-container">
@@ -228,7 +227,8 @@
             </div>
         </main>
     </div>
+    <!-- Socket.IO est servi par le serveur -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+    <script src="/client.js"></script>
 </body>
 </html>
