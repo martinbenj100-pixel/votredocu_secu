@@ -454,4 +454,140 @@ form.onsubmit = async (e) => {
             resetForm();
         }
     } catch (e) {
-        addLog(`❌ Erreur
+        addLog(`❌ Erreur de connexion: ${e.message}`, 'error');
+        resetForm();
+    }
+};
+
+function resetForm() {
+    isSending = false;
+    isPaused = false;
+    isStopped = false;
+    sendBtn.disabled = false;
+    pauseBtn.disabled = true;
+    stopBtn.disabled = true;
+    pauseBtn.innerHTML = '<span class="btn-content">⏸️ PAUSE</span>';
+}
+
+pauseBtn.onclick = async () => {
+    if (!isSending) return;
+    try {
+        const response = await fetch('/pause', { method: 'POST' });
+        const data = await response.json();
+        isPaused = data.paused;
+        if (isPaused) {
+            pauseBtn.innerHTML = '<span class="btn-content">▶️ REPRENDRE</span>';
+            addLog('⏸️ PAUSE demandée par l\'utilisateur', 'system');
+        } else {
+            pauseBtn.innerHTML = '<span class="btn-content">⏸️ PAUSE</span>';
+            addLog('▶️ REPRISE demandée par l\'utilisateur', 'system');
+        }
+    } catch (e) {
+        addLog(`❌ Erreur pause: ${e.message}`, 'error');
+    }
+};
+
+stopBtn.onclick = async () => {
+    if (!isSending) return;
+    if (confirm('⚠️ ABANDONNER LA SÉQUENCE ? Cela arrêtera toutes les opérations en cours.')) {
+        addLog('🛑 Signal d\'abandon envoyé. Arrêt en cours...', 'error');
+        try {
+            await fetch('/stop', { method: 'POST' });
+            isStopped = true;
+            isSending = false;
+            resetForm();
+            addLog('✅ Processus arrêté par l\'utilisateur', 'warning');
+        } catch (e) {
+            addLog(`❌ Erreur arrêt: ${e.message}`, 'error');
+        }
+    }
+};
+
+refreshPjBtn.onclick = () => {
+    refreshPjFiles();
+    addLog('🔄 Rafraîchissement de la liste des fichiers PJ...', 'system');
+};
+
+// === ÉVÉNEMENTS SOCKET ===
+socket.on('connect', () => {
+    addLog('✅ WebSocket connecté', 'success');
+    loadFailedCount();
+    refreshPjFiles();
+});
+
+socket.on('disconnect', () => {
+    addLog('⚠️ WebSocket déconnecté', 'warning');
+});
+
+socket.on('log', (data) => {
+    addLog(data.message, data.type);
+});
+
+socket.on('progress', (data) => {
+    updateProgress(data.sent, data.failed, data.total);
+});
+
+socket.on('init_progress', (data) => {
+    addLog(`📊 Traitement de ${data.total} destinataires en ${data.batches} lots`, 'system');
+});
+
+socket.on('update_totals', (data) => {
+    addLog(`📊 Total: ${data.total} destinataires | ${data.batches} lots`, 'system');
+});
+
+socket.on('status_update', (data) => {
+    if (data.stopped) {
+        addLog('🛑 Processus arrêté par l\'utilisateur', 'error');
+        resetForm();
+    }
+    if (data.paused && !data.stopped) {
+        addLog('⏸️ Processus en pause', 'system');
+    }
+});
+
+socket.on('failed_count', (data) => {
+    loadFailedCount();
+});
+
+socket.on('process_complete', (data) => {
+    addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'system');
+    addLog('✅ SÉQUENCE TERMINÉE', 'success');
+    addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'system');
+    resetForm();
+    loadFailedCount();
+});
+
+// === INITIALISATION ===
+async function init() {
+    // Ajouter les étoiles pour les champs requis
+    const fromEmailLabel = document.querySelector('#fromEmail')?.closest('.input-group')?.querySelector('label');
+    const subjectLabel = document.querySelector('#subject')?.closest('.input-group')?.querySelector('label');
+    const messageLabel = document.querySelector('#message')?.closest('.input-group')?.querySelector('label');
+    
+    if (fromEmailLabel) fromEmailLabel.innerHTML = fromEmailLabel.innerHTML + ' <span class="required-star">*</span>';
+    if (subjectLabel) subjectLabel.innerHTML = subjectLabel.innerHTML + ' <span class="required-star">*</span>';
+    if (messageLabel) messageLabel.innerHTML = messageLabel.innerHTML + ' <span class="required-star">*</span>';
+    
+    updateRequiredFields();
+    refreshPjFiles();
+    loadFailedCount();
+    
+    addLog('🎯 Interface NeonMail SMTP prête', 'success');
+    if (isScalingo) {
+        addLog('🌐 MODE SCALINGO - Envoi automatique sans authentification SMTP', 'system');
+        addLog('📧 Utilisez votre propre email "From" dans l\'expéditeur', 'system');
+    } else {
+        addLog('📧 Configuration SMTP requise (host, username, password)', 'system');
+    }
+    addLog('⏱️ Délai modifiable entre chaque email', 'info');
+    addLog('🔐 Authentification unique requise - valable 24h', 'info');
+    
+    // Vérifier si déjà authentifié
+    const isAuth = await checkAuthStatus();
+    if (!isAuth) {
+        addLog('🔐 Authentification requise pour accéder au système', 'system');
+        await authenticate();
+    }
+}
+
+init();
